@@ -1,5 +1,7 @@
 -module(cell).
 -compile(export_all).
+-include_lib("wx/include/wx.hrl").
+
 
 start(State) ->
 	spawn_link(fun() -> init(State) end).
@@ -87,3 +89,55 @@ flip() ->
 		true ->
 			dead
 	end.
+
+%% 5.4
+
+all(M) ->
+	{Grid,All} = state(M),
+	connect(Grid),
+	All.
+
+connect([R,Rm,R1]) ->
+	connect(R,Rm,R1);
+connect([R1,R2,R3|Rest]) ->
+	connect(R1,R2,R3),
+	connect([R2,R3|Rest]).
+
+connect([NE,N,NW],[E,This,W],[SE,S,SW]) ->
+	This ! {init,[NE,N,NW,E,W,SE,S,SW]};
+connect([NE,N,NW|Nr],[E,This,W|Tr],[SE,S,SW|Sr]) ->
+	This ! {init,[NE,N,NW,E,W,SE,S,SW]},
+	connect([N,NW|Nr],[This,W|Tr],[S,SW|Sr]).
+
+%%bench
+
+bench(N,M) ->
+	All = all(M),
+	Start = erlang:system_time(micro_seconds),
+	init(N,self(),All),
+	benchCollect(All),
+	Stop = erlang:system_time(micro_seconds),
+	Time = Stop - Start,
+	io:format("~w generations of size ~w computed in ~w us~n",[N,M,Time]).
+
+init(N,Pid,All) ->
+	lists:foreach(fun(Proc)-> Proc ! {go,N,Pid} end, All).
+
+benchCollect(All) ->
+	lists:map(fun(Pid) -> 
+		receive
+			{done,Pid} ->
+				Pid
+		end
+	end,
+	All).
+
+%% GUI
+
+%gui() ->
+	 %
+	 %My_wx_dir = code:lib_dir(wx),
+	 %rr(My_wx_dir ++ "/include/wx.hrl"),
+	 %rr(My_wx_dir ++ "/src/wxe.hrl").
+	
+	
