@@ -1,6 +1,5 @@
 -module(cell).
 -compile(export_all).
--include_lib("wx/include/wx.hrl").
 
 
 start(State) ->
@@ -10,18 +9,18 @@ init(State) ->
 	receive
 		{init,Neighbours} ->
 			receive
-				{go,N,Ctrl} ->
-					cell(N,Ctrl,State,Neighbours)
+				{go,Ctrl} ->
+					cell(Ctrl,State,Neighbours)
 			end
 	end.
 
-cell(0,Ctrl,_State,_Neighbours) ->
-	Ctrl ! {done,self()};
-cell(N,Ctrl,State,Neighbors) ->
-	multicast(State,Neighbors),
-	All = collect(Neighbors),
-	Next=rule(All,State),
-	cell(N-1,Ctrl,Next,Neighbors).
+cell(Ctrl,State,Neighbours) ->
+	multicast(State,Neighbours),
+	All = collect(Neighbours),
+	Next = rule(All,State),
+	Ctrl ! {self(), Next},
+	timer:sleep(10000), %10 sekund
+	cell(Ctrl,Next,Neighbours).
 
 
 multicast(State,Neighbors) ->
@@ -54,46 +53,38 @@ alive(Neighbours) ->
 	lists:foldl(fun(X,Count) -> if X == alive -> Count + 1; X == dead -> Count end end ,0,Neighbours).
 
 
-%% next module?
+% next module?
 
-row(M) ->
-	First = start(flip()),
-	{Rows,Last, Pid} = row(M,2,First),
-	{[Last,First|Rows], [First] ++ Pid}.
+dostosujRzedy(List) ->
+	N = length(List),
+	NowaLista = dostosujKolumny(N,List),
+	[H|_] = NowaLista,
+	{[lists:last(NowaLista)] ++ NowaLista ++ [H], lists:flatten(List)}.
 
-row(M,M,First) ->
-	Last = start(flip()),
-	{[Last,First],Last,[Last]};
-row(M,R,First) ->
-	Cell = start(flip()),
-	{Cells,Last,Pid} = row(M,R+1, First),
-	{[Cell|Cells], Last,[Cell]++Pid}.
+dostosujKolumny(0,_) ->
+	 [];
+	
+dostosujKolumny(N, List) ->
+	[H|T] = List,
+	[H2|_] = H,
+	First = [lists:last(H)] ++ H ++ [H2],
+	Rest = dostosujKolumny(N-1,T),
+	[First] ++ Rest.
 
-state(M) ->
-	{First,A} = row(M),
-	{Rows,Last, Msg} = state(M,2,First),
-	{[Last,First|Rows],A ++ Msg}.
 
-state(M,M,First) ->
-	{Last,A} = row(M),
-	{[Last,First],Last,A};
-state(M,R,First) ->
-	{Row,A} = row(M),
-	{Rows,Last,Msg} = state(M,R+1,First),
-	{[Row|Rows],Last,A++Msg}.
-flip() ->
-	Flip = random:uniform(4),
-	if
-		Flip == 1 ->
-			alive;
-		true ->
-			dead
-	end.
+testGrid() ->
+	[[start(dead), start(dead), start(dead), start(alive),  start(dead) ] ,
+	 [start(dead), start(dead), start(dead), start(alive),  start(dead) ],
+	 [start(alive), start(alive), start(dead), start(dead), start(alive)],
+	 [start(dead), start(alive), start(alive), start(dead), start(dead) ] ,
+	 [start(alive), start(dead),start(alive),start(dead),   start(alive)]
+	 ].
+
 
 %% 5.4
 
-all(M) ->
-	{Grid,All} = state(M),
+all() ->
+	{Grid,All} = dostosujRzedy(testGrid()),
 	connect(Grid),
 	All.
 
@@ -111,33 +102,37 @@ connect([NE,N,NW|Nr],[E,This,W|Tr],[SE,S,SW|Sr]) ->
 
 %%bench
 
-bench(N,M) ->
-	All = all(M),
-	Start = erlang:system_time(micro_seconds),
-	init(N,self(),All),
-	benchCollect(All),
-	Stop = erlang:system_time(micro_seconds),
-	Time = Stop - Start,
-	io:format("~w generations of size ~w computed in ~w us~n",[N,M,Time]).
+loop() ->
+	All = all(),
+	init(self(),All),
+	outputLoop(All).
 
-init(N,Pid,All) ->
-	lists:foreach(fun(Proc)-> Proc ! {go,N,Pid} end, All).
+init(Pid,All) ->
+	lists:foreach(fun(Proc)-> Proc ! {go,Pid} end, All).
 
-benchCollect(All) ->
-	lists:map(fun(Pid) -> 
-		receive
-			{done,Pid} ->
-				Pid
-		end
-	end,
-	All).
+listen(X) ->
+	receive
+		{X,State} -> atom_to_list(State)
+	end.
 
-%% GUI
 
-%gui() ->
-	 %
-	 %My_wx_dir = code:lib_dir(wx),
-	 %rr(My_wx_dir ++ "/include/wx.hrl"),
-	 %rr(My_wx_dir ++ "/src/wxe.hrl").
+formatOutput(List) ->
+	L2 = lists:map(fun([_,B]) -> B end, List),
+	L3 = splitIn5(L2),
+	Ready = lists:flatten(lists:map(fun(X) -> lists:concat([lists:map(fun(Y) -> lists:concat([Y,", "]) end,X), "~n"]) end, L3)),
+	io:format(Ready),
+	io:format("-------------------- gen end ---------------------- ~n").
 	
-	
+splitIn5(List) -> splitIn5(List,length(List)).
+
+splitIn5(List,L) when L=<5 -> [List];
+				
+splitIn5(List,_) ->
+	{A,B} = lists:split(5,List),
+	[A] ++ splitIn5(B,length(B)).
+
+actual(All) ->
+	lists:map(fun(X) -> [X, listen(X)] end, All).
+
+outputLoop(All) ->
+	formatOutput(actual(All)), outputLoop(All).
