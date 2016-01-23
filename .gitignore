@@ -1,0 +1,4 @@
+*.beam
+*.class
+*.jar
+.settings/org.eclipse.core.resources.prefs
