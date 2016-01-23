@@ -1,0 +1,1 @@
+Main-Class: pwir.project.gameOfLife.GuiNode
