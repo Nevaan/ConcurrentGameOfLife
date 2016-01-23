@@ -1,5 +1,3 @@
-package pwir.project.gameOfLife;
-
 import java.awt.Color;
 import java.awt.Graphics;
 import java.io.IOException;

@@ -4,9 +4,9 @@ Plik .erl :
 erl -make
 
 Plik .java:
-javac -classpath "lib" guiNode.java
 
-
+javac -classpath jinterface-1.5.3.1.jar GuiNode.java
+jar -cvfm guiNode.jar MANIFEST.MF GuiNode.class
 
 Obliczanie stanu automatu komórkowego:
 
@@ -16,3 +16,5 @@ main:start().
 
 GUI:
 java -jar guiNode.jar
+
+
