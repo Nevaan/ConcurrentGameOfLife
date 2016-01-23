@@ -6,13 +6,13 @@
 
 
 
-% tworzy siatke komorek z listy procesow i laczy je ze soba
+%% tworzy siatke komorek z listy procesow i laczy je ze soba
 all() ->
 	{Grid,All} = createRows(),
 	connect(Grid),
 	All.
 
-% funkcja rozsylajaca identyfikatory procesow - sasiadow 
+%% funkcja rozsylajaca identyfikatory procesow - sasiadow 
 connect([R,Rm,R1]) ->
 	connect(R,Rm,R1);
 connect([R1,R2,R3|Rest]) ->

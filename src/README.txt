@@ -9,7 +9,7 @@ w którym znajduj¹ siê pliki Ÿród³owe.
 Plik .erl :
 erl -make
 
-Plik .java:
+Plik .java (w paczce znajduje siê skompilowany, uruchamialny jar, na wypadek problemów z jego utworzeniem):
 
 javac -classpath jinterface-1.5.3.1.jar GuiNode.java
 jar -cvfm guiNode.jar MANIFEST.MF GuiNode.class

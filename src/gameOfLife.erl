@@ -5,7 +5,7 @@
 -import(processHandler,[all/0]).
 -import(outputFormat,[formatOutput/1]).
 
-% funkcja nawiazujaca polaczenie z GUI i inicjalizująca działanie programu
+%% funkcja nawiazujaca polaczenie z GUI i inicjalizująca działanie programu
 gameOfLifeNode() ->
 	io:format("Waiting for GUI node... ~n"),
 	receive
@@ -19,16 +19,16 @@ gameOfLifeNode() ->
 				ok
 	end.
 
-% funkcja mapujaca funkcje listen na PIDy wszystkich komorek
+%% funkcja mapujaca funkcje listen na PIDy wszystkich komorek
 actual(All) ->
 	lists:map(fun(X) -> [X, listen(X)] end, All).
 
-% funkcja wysyla wiadomosc konczaca procesy komorek
+%% funkcja wysyla wiadomosc konczaca procesy komorek
 shutdown(All, Ctrl) ->
 	lists:map(fun(X) -> X ! {shutdown} end, All),
 	Ctrl ! {ok}.
 
-% petla wysylajaca string ze stanem automatu do GUI
+%% petla wysylajaca string ze stanem automatu do GUI
 outputLoop(All, Pid) ->
 	Output = formatOutput(actual(All)),
 	Pid ! Output,
@@ -44,11 +44,11 @@ outputLoop(All, Pid) ->
 	end.
 	
 
-% wysyłanie wiadomosci inicjujacej generowanie kolejnych stanow
+%% wysylanie wiadomosci inicjujacej generowanie kolejnych stanow
 init(Pid,All) ->
 	lists:foreach(fun(Proc)-> Proc ! {go,Pid} end, All).
 
-% zbieranie krotki {PID, stan} zmapowane na wszystkie procesy-komorki
+%% zbieranie krotki {PID, stan} zmapowane na wszystkie procesy-komorki
 listen(X) ->
 	receive
 		{X,State} -> State

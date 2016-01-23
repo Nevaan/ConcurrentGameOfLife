@@ -3,7 +3,7 @@
 -module(outputFormat).
 -export([formatOutput/1]).
 
-%% Modul formatujacy String wysylany do GUI, plus formatowanie do czytelnej postaci na potrzeby wyswietlania w konsoli
+%% Modul formatujacy string wysylany do GUI, plus formatowanie do czytelnej postaci na potrzeby wyswietlania w konsoli
 
 formatOutput(List) ->
 	L2 = lists:map(fun([_,B]) -> B end, List),
