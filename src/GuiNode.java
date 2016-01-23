@@ -1,5 +1,11 @@
+/*
+ * @author Pawel Losek 
+ */
+
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 
 import javax.swing.JFrame;
@@ -15,8 +21,11 @@ import com.ericsson.otp.erlang.OtpMbox;
 import com.ericsson.otp.erlang.OtpNode;
  
 public class GuiNode extends JPanel{
+	
     static String server = "gameOfLife";
     static boolean grid[][] = new boolean[5][5];
+    static OtpNode self = null;
+    static OtpMbox mbox = null;
     
     public static void main(String[] _args) throws Exception {
  
@@ -25,12 +34,12 @@ public class GuiNode extends JPanel{
         OtpMbox mbox = null;
         try {
             self = new OtpNode("guiNode", "cookie");
-            mbox = self.createMbox("facserver");
+            mbox = self.createMbox("mailbox");
  
             if (self.ping(server, 2000)) {
                 System.out.println("Connecting with erlang node succeed!");
             } else {
-                System.out.println("Erlang node is probably down, shutting down...");
+                System.out.println("Erlang node is probably down, shutting down this node...");
                 return;
             }
 
@@ -46,7 +55,6 @@ public class GuiNode extends JPanel{
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
         
- 
         OtpErlangObject[] msg = new OtpErlangObject[2];
         msg[0] = mbox.self();
         msg[1] = new OtpErlangAtom("gui");
@@ -56,6 +64,10 @@ public class GuiNode extends JPanel{
         while (true)
             try {
                 OtpErlangString robj =  (OtpErlangString) mbox.receive();
+                if (robj.stringValue().equals("closeWindow")) {
+                	frame.dispose();
+                	break;
+                }
                 System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~");              
                 System.out.println(robj.stringValue());    
                 stringToBoolean(robj.stringValue());

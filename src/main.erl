@@ -1,9 +1,10 @@
-%% @author pawel
-%% @doc @todo Add description to main.
+%% @author Pawel Losek
 
 -module(main).
--export([start/0]).
+-export([start/0, stop/0]).
 
 start() ->
 	register(gameOfLifeNode,spawn_link(gameOfLife,gameOfLifeNode,[])).
 
+stop() -> 
+	gameOfLifeNode ! {abort}.

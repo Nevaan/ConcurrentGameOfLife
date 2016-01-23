@@ -10,23 +10,41 @@ gameOfLifeNode() ->
 	io:format("Waiting for GUI node... ~n"),
 	receive
 		{Pid, gui} ->
-			io:format("Connected with guiNode")
-	end,
-	All = all(),
-	init(self(),All),
-	outputLoop(All, Pid).
+			io:format("Connected with guiNode.~n"),
+			All = all(),
+			init(self(),All),
+			outputLoop(All, Pid);
+		{abort} ->
+				exit(self(), aborted),
+				ok
+	end.
 
 % funkcja mapujaca funkcje listen na PIDy wszystkich komorek
 actual(All) ->
 	lists:map(fun(X) -> [X, listen(X)] end, All).
 
+% funkcja wysyla wiadomosc konczaca procesy komorek
+shutdown(All, Ctrl) ->
+	lists:map(fun(X) -> X ! {shutdown} end, All),
+	Ctrl ! {ok}.
+
 % petla wysylajaca string ze stanem automatu do GUI
 outputLoop(All, Pid) ->
 	Output = formatOutput(actual(All)),
 	Pid ! Output,
-	outputLoop(All, Pid).
+	receive
+		{abort} -> 
+			Pid ! "closeWindow",
+			spawn(fun() -> shutdown(All, self()) end),
+			receive
+				{ok} ->	exit(self(), aborted),
+						ok
+			end
+		after 10 -> outputLoop(All, Pid)
+	end.
+	
 
-% wysyłanie wiadomosci 
+% wysyłanie wiadomosci inicjujacej generowanie kolejnych stanow
 init(Pid,All) ->
 	lists:foreach(fun(Proc)-> Proc ! {go,Pid} end, All).
 
@@ -35,3 +53,4 @@ listen(X) ->
 	receive
 		{X,State} -> State
 	end.
+

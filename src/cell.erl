@@ -20,10 +20,15 @@ cell(Ctrl,State,Neighbours) ->
 	multicast(State,Neighbours),
 	All = collect(Neighbours),
 	Next = rule(All,State),
-	Ctrl ! {self(), Next},
-	timer:sleep(2000), %2 sekundy
-	cell(Ctrl,Next,Neighbours).
-
+	Ctrl ! {self(), State},
+	receive
+		{shutdown} ->
+			io:format("~p: Otrzymano wiadomosc -  exit ~n", [self()]),
+			exit(self(),shutDown),
+			ok
+		after 1500 ->
+			cell(Ctrl,Next,Neighbours)
+	end.
 
 multicast(State,Neighbors) ->
 	Self = self(),
